@@ -44,13 +44,22 @@ namespace Rubberduck.UI.Controls
         {
             base.OnAttached();
 
-            var states = GetExpandedStateStore();
-            var expanded = !states.ContainsKey(GroupName ?? string.Empty) ? (bool?)null : states[GroupName ?? string.Empty];
+            // Ensure the visual tree is fully loaded before trying to access parents
+            AssociatedObject.Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                var states = GetExpandedStateStore();
+                if (states == null) return;
 
-            AssociatedObject.IsExpanded = expanded ?? InitialExpandedState;
+                var key = GroupName ?? AssociatedObject.GetHashCode();
+                if (!states.ContainsKey(key))
+                {
+                    states[key] = InitialExpandedState;
+                }
 
-            AssociatedObject.Expanded += OnExpanded;
-            AssociatedObject.Collapsed += OnCollapsed;
+                AssociatedObject.IsExpanded = states[key];
+                AssociatedObject.Expanded += OnExpanded;
+                AssociatedObject.Collapsed += OnCollapsed;
+            }));
         }
 
         protected override void OnDetaching()
